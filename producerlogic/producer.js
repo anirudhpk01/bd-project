@@ -2,7 +2,7 @@ const { kafka } = require('./client');  // Kafka client configuration
 const express = require("express");
 const app = express();
 const cors = require("cors");
-
+const axios= require("axios")
 app.use(cors());
 app.use(express.json());
 
@@ -28,6 +28,47 @@ async function initProducer() {
 }
 
 initProducer().catch(console.error);
+
+
+
+
+
+
+
+
+
+const { JWT_SECRET } = require("./config")
+const jwt = require('jsonwebtoken')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// app.post('/api/register', async (req,res)=>{
+
+//     const {token}= req.body
+//     try{
+//         const decoded = jwt.verify(token, JWT_SECRET)
+//         //what should i check to put next
+//         req.user=decoded
+//         next()
+        
+//     }catch(err){
+//         res.status(403).json({ message: "Some issue in JWT Authorization"})
+        
+//     }
+
+// })
 
 // POST endpoint to receive messages
 app.post('/api/emojisend', async (req, res) => {

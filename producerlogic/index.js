@@ -23,7 +23,7 @@ async function init(){
     console.log("Gonna start creating topic....")
     await admin.createTopics({
         topics: [{
-            topic: 'emoji2',
+            topic: 'publisher-emojis',
             numPartitions: 1
 
 
