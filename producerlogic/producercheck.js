@@ -9,6 +9,10 @@ app.use(express.json());
 const producer = kafka.producer();
 let messageQueue = [];
 
+
+
+
+
 // Initialize the producer and connect
 async function initProducer() {
     await producer.connect();
