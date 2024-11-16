@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Example</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <form id="authForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name"><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"><br><br>
+        <button type="button" id="connectButton">Connect</button>
+    </form>
+
+    <h2>Messages</h2>
+    <ul id="messages"></ul>
+
+    <script>
+        // Establish socket connection dynamically based on the current URL
+        const baseUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+        let socket = io(baseUrl);
+
+        // Function to initialize socket listeners
+        function initializeSocketListeners(socket) {
+            socket.on("authenticated", (data) => {
+                console.log(data.message);
+                alert(data.message);
+            });
+
+            socket.on("error", (error) => {
+                console.error(error.error);
+                alert("Error: " + error.error);
+            });
+
+            socket.on("messageBuffer", (messages) => {
+                const messageList = document.getElementById('messages');
+                messages.forEach(message => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = JSON.stringify(message);
+                    messageList.appendChild(listItem);
+                });
+            });
+
+            socket.on("newMessages", (messages) => {
+                const messageList = document.getElementById('messages');
+                messages.forEach(message => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = JSON.stringify(message);
+                    messageList.appendChild(listItem);
+                });
+            });
+
+            socket.on("disconnect", () => {
+                console.log("Disconnected from server");
+                alert("Disconnected from server");
+            });
+
+            // Handle redirection to another port
+            socket.on("redirect", ({ port }) => {
+                alert(`Redirecting you to another cluster on port ${port} in 5 seconds.`);
+                setTimeout(() => {
+                    // Disconnect from the current socket
+                    socket.disconnect();
+
+                    // Reconnect to the new port dynamically
+                    const newBaseUrl = `${window.location.protocol}//${window.location.hostname}:${port}`;
+                    socket = io(newBaseUrl);
+                    console.log(`Connected to the redirected cluster at port ${port}`);
+
+                    // Reinitialize socket listeners
+                    initializeSocketListeners(socket);
+                }, 5000);
+            });
+        }
+
+        // Initialize the listeners for the initial connection
+        initializeSocketListeners(socket);
+
+        // Handle the "Connect" button click
+        document.getElementById('connectButton').addEventListener('click', () => {
+            const name = document.getElementById('name').value;
+            const password = document.getElementById('password').value;
+
+            if (name && password) {
+                // Send authentication data
+                socket.emit("authenticate", { name, password });
+                console.log("Sending the connect request");
+            } else {
+                alert("Please enter both name and password.");
+            }
+        });
+    </script>
+</body>
+</html>

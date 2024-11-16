@@ -5,10 +5,11 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const { kafka } = require('./client'); // Assuming you have kafka setup in 'client.js'
 require('dotenv').config();
-
+const PORT = 3002;
 const app = express();
 app.use(cors());
 app.use(express.json());
+
 
 const { PGHOST, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
 
@@ -24,12 +25,15 @@ const pool = new Pool({
 });
 
 const server = http.createServer(app);
+
+
 const io = new Server(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"]
     }
 });
+
 
 let messageBuffer = [];
 
@@ -51,6 +55,7 @@ async function initClusterConsumer() {
     });
 }
 
+
 // Clear buffer every 3 seconds
 setInterval(() => {
     messageBuffer = [];
@@ -69,6 +74,8 @@ app.post('/register', async (req, res) => {
         res.status(500).json({ error: "Failed to register user" });
     }
 });
+
+
 
 // Socket connection for `/messages`
 io.on("connection", (socket) => {
@@ -140,7 +147,7 @@ io.on("connection", (socket) => {
 initClusterConsumer().catch(console.error);
 
 // Start the server
-const PORT = 3002;
+
 server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
 });

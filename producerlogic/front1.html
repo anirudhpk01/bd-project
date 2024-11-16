@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Emoji Feed</title>
+</head>
+<body>
+    <h2>Real-Time Emoji Feed</h2>
+    
+    <div>
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+        <br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" required>
+        <br><br>
+        <button id="connectButton">Connect</button>
+    </div>
+
+    <div id="messageContainer" style="margin-top: 20px;">
+        <h3>Incoming Messages:</h3>
+        <ul id="messages"></ul>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        let socket = io("http://localhost:3005"); // Initial connection to port 3002
+
+        document.getElementById('connectButton').addEventListener('click', () => {
+            const name = document.getElementById('name').value;
+            const password = document.getElementById('password').value;
+
+            if (name && password) {
+                // Send authentication data
+                
+                socket.emit("authenticate", { name, password });
+                console.log("Sending the connect request")
+            } else {
+                alert("Please enter both name and password.");
+            }
+        });
+
+
+
+        socket.on("redirect", ({ port }) => {
+            alert("Redirecting you to another cluster in 5 seconds.");
+            setTimeout(() => {
+                // Disconnect from the current socket and reconnect to the new port
+                socket.disconnect();
+                socket = io(`http://localhost:${port}`);
+                console.log("Connected to the redirected one")
+            }, 5000);
+        });
+
+
+
+
+
+
+        // Listen for authentication success
+        socket.on("authenticated", (data) => {
+            console.log(data.message);
+            alert(data.message);
+        });
+
+        // Listen for authentication errors
+        socket.on("error", (error) => {
+            console.error(error.error);
+            alert("Error: " + error.error);
+        });
+
+        // Listen for incoming message buffer on initial connection
+        socket.on("messageBuffer", (messages) => {
+            const messageList = document.getElementById('messages');
+            messages.forEach(message => {
+                const listItem = document.createElement('li');
+                listItem.textContent = JSON.stringify(message);
+                messageList.appendChild(listItem);
+            });
+        });
+
+        // Listen for new messages in real-time
+        socket.on("newMessages", (messages) => {
+            const messageList = document.getElementById('messages');
+            messages.forEach(message => {
+                const listItem = document.createElement('li');
+                listItem.textContent = JSON.stringify(message);
+                messageList.appendChild(listItem);
+            });
+        });
+
+        // Listen for redirect event
+        
+
+        // Handle socket disconnection
+        socket.on("disconnect", () => {
+            console.log("Disconnected from server");
+            alert("Disconnected from server");
+        });
+    </script>
+</body>
+</html>
