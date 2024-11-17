@@ -83,12 +83,9 @@ app.post('/register', async (req, res) => {
     }
 });
 
-
-
-// Socket connection for `/messages`
-io.on("connection", async (socket) => {
-    console.log("New client connected");
-
+// New endpoint to provide connection details
+app.post('/connect', async (req, res) => {
+    const { name, password } = req.body;
     const currentPort = 3005;
 
     try {
@@ -100,30 +97,28 @@ io.on("connection", async (socket) => {
             [currentPort]
         );
 
-        if (capacityResult.rows.length > 0 && capacityResult.rows[0].capacity > 0) {
-
+        if (capacityResult.rows.length > 0 && capacityResult.rows[0].capacity > 28) {
+            // Reduce capacity as we will connect to this cluster
             await client.query(
                 `UPDATE cluster_info SET capacity = capacity - 1 WHERE port=${currentPort}`
             );
             console.log("Capacity available on current port.");
+            res.json({ port: currentPort });
         } else {
             // Find an alternative cluster with available capacity
             const alternativeCluster = await client.query(
-                'SELECT port, capacity FROM cluster_info WHERE capacity > 0 ORDER BY capacity ASC LIMIT 1'
+                'SELECT port, capacity FROM cluster_info WHERE capacity > 28 ORDER BY capacity ASC LIMIT 1'
             );
 
             if (alternativeCluster.rows.length > 0) {
                 const { port: newPort } = alternativeCluster.rows[0];
-
-                // Send redirection info to client
-                socket.emit("redirect", { port: newPort });
-                console.log(`Redirecting client to port ${newPort}`);
-                client.release();
-                return; // Stop further processing as we are redirecting
+                // Update capacity for the selected alternative cluster
+                await client.query(
+                    `UPDATE cluster_info SET capacity = capacity - 1 WHERE port=${newPort}`
+                );
+                res.json({ port: newPort });
             } else {
-                socket.emit("error", { error: "All clusters are currently at full capacity." });
-                client.release();
-                return;
+                res.status(503).json({ error: "All clusters are at full capacity." });
             }
         }
 
@@ -131,15 +126,21 @@ io.on("connection", async (socket) => {
 
     } catch (error) {
         console.error("Database query error:", error);
-        socket.emit("error", { error: "Failed to check cluster capacity" });
-        return;
+        res.status(500).json({ error: "Failed to check cluster capacity" });
     }
+});
+
+
+// Socket connection for `/messages`
+// Socket connection for `/messages`
+io.on("connection", async (socket) => {
+    console.log("New client connected");
 
     // Authenticate user
     socket.on("authenticate", async ({ name, password }) => {
         try {
             const client = await pool.connect();
-            if(1>2){console.log()}
+
             // Increase the connected count for this user
             await client.query(
                 'UPDATE emoji_users SET connected = connected + 1 WHERE u_name = $1 AND pwd = $2',
@@ -190,7 +191,7 @@ io.on("connection", async (socket) => {
                     [name, password]
                 );
                 await client.query(
-                    `UPDATE cluster_info SET capacity = capacity + 1 WHERE port=${currentPort}`
+                    `UPDATE cluster_info SET capacity = capacity + 1 WHERE port=${PORT}`
                 );
                 client.release();
                 console.log("Client disconnected and connection count updated");

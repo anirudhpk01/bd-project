@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Emoji Feed</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 500px; /* Reduced from 800px */
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        h3 {
+            color: #34495e;
+            margin-top: 0;
+        }
+        
+        #messageContainer {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #messages {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            height: 600px; /* Increased from 400px */
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: #3498db #f1f1f1;
+        }
+
+        #messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        #messages::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 4px;
+        }
+
+        #messages::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+        
+        #messages li {
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .emoji-container {
+            margin-top: 10px;
+            font-size: 1.5em;
+            word-wrap: break-word; /* Added to handle long emoji sequences */
+        }
+        
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.8em;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <h2>Real-Time Emoji Feed</h2>
+    <div id="messageContainer">
+        <h3>Incoming Messages:</h3>
+        <ul id="messages"></ul>
+    </div>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        // Helper function to get URL parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Function to convert emoji type to actual emoji
+        function getEmoji(type) {
+            const emojiMap = {
+                'happy': '😊',
+                'sad': '😢',
+                'angry': '😠',
+                'love': '❤️',
+                'laugh': '😂'
+            };
+            return emojiMap[type.toLowerCase()] || '❓';
+        }
+
+        // Function to format timestamp
+        function formatTime(timestamp) {
+            return new Date(timestamp).toLocaleTimeString();
+        }
+
+        // Function to scroll to bottom of messages
+        function scrollToBottom() {
+            const messageList = document.getElementById('messages');
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        // Function to create message display
+        function createMessageDisplay(message) {
+            const listItem = document.createElement('li');
+            const emoji = getEmoji(message.emojiType);
+            const startTime = formatTime(message.window.start);
+            const endTime = formatTime(message.window.end);
+            
+            const timeDisplay = document.createElement('div');
+            timeDisplay.className = 'timestamp';
+            timeDisplay.textContent = `${startTime} - ${endTime}`;
+            
+            const emojiContainer = document.createElement('div');
+            emojiContainer.className = 'emoji-container';
+            emojiContainer.textContent = emoji.repeat(message.frequency);
+            
+            listItem.appendChild(timeDisplay);
+            listItem.appendChild(emojiContainer);
+            return listItem;
+        }
+
+        // Get port, name, and password from URL parameters
+        const port = getQueryParam('port');
+        const name = getQueryParam('name');
+        const password = getQueryParam('password');
+
+        if (port && name && password) {
+            const socket = io(`http://localhost:${port}`);
+
+            socket.on("connect", () => {
+                socket.emit("authenticate", { name, password });
+            });
+
+            socket.on("authenticated", (data) => {
+                console.log(data.message);
+                alert(data.message);
+            });
+
+            socket.on("error", (error) => {
+                console.error(error.error);
+                alert("Error: " + error.error);
+            });
+
+            socket.on("messageBuffer", (messages) => {
+                const messageList = document.getElementById('messages');
+                messages.forEach(message => {
+                    messageList.appendChild(createMessageDisplay(message));
+                });
+                scrollToBottom();
+            });
+
+            socket.on("newMessages", (messages) => {
+                const messageList = document.getElementById('messages');
+                messages.forEach(message => {
+                    messageList.appendChild(createMessageDisplay(message));
+                });
+                scrollToBottom();
+            });
+
+            socket.on("disconnect", () => {
+                console.log("Disconnected from server");
+                alert("Disconnected from server");
+            });
+        } else {
+            alert("Invalid connection details. Please return to the login page.");
+        }
+    </script>
+</body>
+</html>

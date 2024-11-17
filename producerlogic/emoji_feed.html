@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Emoji Feed</title>
+</head>
+<body>
+    <h2>Real-Time Emoji Feed</h2>
+    <div id="messageContainer" style="margin-top: 20px;">
+        <h3>Incoming Messages:</h3>
+        <ul id="messages"></ul>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        // Helper function to get URL parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Get port, name, and password from URL parameters
+        const port = getQueryParam('port');
+        const name = getQueryParam('name');
+        const password = getQueryParam('password');
+
+        if (port && name && password) {
+            // Initialize socket connection with the provided port
+            const socket = io(`http://localhost:${port}`);
+
+            // Authenticate on connection
+            socket.on("connect", () => {
+                socket.emit("authenticate", { name, password });
+            });
+
+            // Listen for authentication success
+            socket.on("authenticated", (data) => {
+                console.log(data.message);
+                alert(data.message);
+            });
+
+            // Listen for authentication errors
+            socket.on("error", (error) => {
+                console.error(error.error);
+                alert("Error: " + error.error);
+            });
+
+            // Listen for incoming message buffer
+            socket.on("messageBuffer", (messages) => {
+                const messageList = document.getElementById('messages');
+                messages.forEach(message => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = JSON.stringify(message);
+                    messageList.appendChild(listItem);
+                });
+            });
+
+            // Listen for new messages in real-time
+            socket.on("newMessages", (messages) => {
+                const messageList = document.getElementById('messages');
+                messages.forEach(message => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = JSON.stringify(message);
+                    messageList.appendChild(listItem);
+                });
+            });
+
+            // Handle socket disconnection
+            socket.on("disconnect", () => {
+                console.log("Disconnected from server");
+                alert("Disconnected from server");
+            });
+        } else {
+            alert("Invalid connection details. Please return to the login page.");
+        }
+    </script>
+</body>
+</html>

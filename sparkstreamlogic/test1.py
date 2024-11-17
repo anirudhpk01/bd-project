@@ -36,11 +36,16 @@ emoji_count_df = emoji_df \
     .withWatermark("timestamp", "2 seconds") \
     .groupBy(window(col("timestamp"), "2 seconds"), "emojiType") \
     .count() \
-    .filter(col("count") >= 2)  # Only keep entries with frequency >= 2
+    .filter(col("count") >= 100)  # Only keep entries with frequency >= 2
+
+
+#2 can be 1000
+
+
 
 # Apply a proper window duration to make sure batches are being processed in chunks
 final_df = emoji_count_df \
-    .withColumn("batches", (col("count") / 2).cast("integer")) \
+    .withColumn("batches", (col("count") / 100).cast("integer")) \
     .select("window", "emojiType", "batches") \
     .withColumnRenamed("batches", "frequency")
 
@@ -58,7 +63,7 @@ query = kafka_df \
     .option("kafka.bootstrap.servers", "localhost:9092") \
     .option("topic", "emoji-counts") \
     .option("checkpointLocation", "/home/hadoopu/bd-project/sparkstreamlogic/checkpoints")\
-    .trigger(processingTime="2 seconds") \
+    .trigger(processingTime="2 seconds")\
     .start()
 
 query.awaitTermination()

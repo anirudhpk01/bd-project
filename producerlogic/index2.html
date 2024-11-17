@@ -3,92 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socket.IO Example</title>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-</head>
-<body>
-    <h1>WebSocket Client</h1>
-    <form id="authForm">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name"><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password"><br><br>
-        <button type="button" id="connectButton">Connect</button>
-    </form>
-
-    <h2>Messages</h2>
-    <ul id="messages"></ul>
-
-    <script>
-        // Establish socket connection dynamically based on the current URL
-        const baseUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
-        let socket = io(baseUrl);
-
-        // Function to initialize socket listeners
-        function initializeSocketListeners(socket) {
-            socket.on("authenticated", (data) => {
-                console.log(data.message);
-                alert(data.message);
-            });
-
-            socket.on("error", (error) => {
-                console.error(error.error);
-                alert("Error: " + error.error);
-            });
-
-            socket.on("messageBuffer", (messages) => {
-                const messageList = document.getElementById('messages');
-                messages.forEach(message => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = JSON.stringify(message);
-                    messageList.appendChild(listItem);
-                });
-            });
-
-            socket.on("newMessages", (messages) => {
-                const messageList = document.getElementById('messages');
-                messages.forEach(message => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = JSON.stringify(message);
-                    messageList.appendChild(listItem);
-                });
-            });
-
-            socket.on("disconnect", () => {
-                console.log("Disconnected from server");
-                alert("Disconnected from server");
-            });
-
-            // Handle redirection to another port
-            socket.on("redirect", ({ port }) => {
-                alert(`Redirecting you to another cluster on port ${port} in 5 seconds.`);
-                setTimeout(() => {
-                    // Disconnect from the current socket
-                    socket.disconnect();
-
-                    // Reconnect to the new port dynamically
-                    const newBaseUrl = `${window.location.protocol}//${window.location.hostname}:${port}`;
-                    socket = io(newBaseUrl);
-                    console.log(`Connected to the redirected cluster at port ${port}`);
-
-                    // Reinitialize socket listeners
-                    initializeSocketListeners(socket);
-                }, 5000);
-            });
+    <title>Connect to Emoji Feed</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
         }
-
-        // Initialize the listeners for the initial connection
-        initializeSocketListeners(socket);
-
-        // Handle the "Connect" button click
-        document.getElementById('connectButton').addEventListener('click', () => {
+    
+        /* Create a low-opacity background image as a watermark */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('./assets/image.png'); /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1; /* Adjust opacity here for watermark effect */
+            z-index: -1;
+            pointer-events: none;
+        }
+    
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+    
+        div {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+    
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+    
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+    
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
+        }
+    
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+    
+        button:hover {
+            background-color: #2980b9;
+        }
+    
+        button:active {
+            transform: scale(0.98);
+        }
+    </style>
+    </head>
+    <body>
+        <h2>Connect to Real-Time Emoji Feed</h2>
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" required>
+            <br><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+            <br><br>
+            <button id="connectButton">Connect</button>
+        </div>
+    <script>
+        document.getElementById('connectButton').addEventListener('click', async () => {
             const name = document.getElementById('name').value;
             const password = document.getElementById('password').value;
-
             if (name && password) {
-                // Send authentication data
-                socket.emit("authenticate", { name, password });
-                console.log("Sending the connect request");
+                try {
+                    const response = await fetch("http://localhost:3005/connect", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, password })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (data.port) {
+                        // Redirect to the second page with the port in the URL
+                        window.location.href = `emoji_feed2.html?port=${data.port}&name=${encodeURIComponent(name)}&password=${encodeURIComponent(password)}`;
+                    } else if (data.error) {
+                        alert(data.error);
+                    }
+                } catch (error) {
+                    console.error("Connection failed:", error);
+                    alert("Failed to connect to server.");
+                }
             } else {
                 alert("Please enter both name and password.");
             }

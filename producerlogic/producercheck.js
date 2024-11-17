@@ -9,6 +9,7 @@ app.use(express.json());
 const producer = kafka.producer();
 let messageQueue = [];
 
+//we have a post endpoint ready AND by default we also have a script here which produces vast scale of messages
 
 
 
@@ -77,7 +78,7 @@ app.post('/api/emojisend', async (req, res) => {
 });
 
 // Start the Express server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3010;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

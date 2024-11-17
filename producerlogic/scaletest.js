@@ -34,11 +34,11 @@ function produceEmojisAutomatically() {
     setInterval(() => {
         // Send 200 happy emojis and 100 sad emojis every 2 seconds
         const timestamp = Date.now();
-        const happyEmojis = Array.from({ length: 200 }, (_, i) => ({
+        const happyEmojis = Array.from({ length: 300 }, (_, i) => ({
             key: `user${i % 3 + 1}`,  // Distributing user keys
             value: JSON.stringify({ userId: `user${i % 3 + 1}`, emojiType: 'happy', timestamp })
         }));
-        const sadEmojis = Array.from({ length: 100 }, (_, i) => ({
+        const sadEmojis = Array.from({ length: 200 }, (_, i) => ({
             key: `user${i % 3 + 1}`,  // Distributing user keys
             value: JSON.stringify({ userId: `user${i % 3 + 1}`, emojiType: 'sad', timestamp })
         }));
