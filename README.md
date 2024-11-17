@@ -7,7 +7,10 @@
 # Read Me update on how to set it up and how it works!
 
 ## Screenshots
-![image](https://github.com/user-attachments/assets/ddf4840a-2000-4538-809a-2518c7d02c7a)
+
+
+![image](https://github.com/user-attachments/assets/536cda04-6318-4013-9a82-3be42e638f34)
+
 ![image](https://github.com/user-attachments/assets/7b806a6f-fa99-4cc1-8190-449b27fc6ff5)
 ![image](https://github.com/user-attachments/assets/9b0e24b2-d564-48c6-b83b-f7a288c0c347)
 
